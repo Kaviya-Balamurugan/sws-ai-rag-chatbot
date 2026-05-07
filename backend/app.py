@@ -14,6 +14,9 @@ load_dotenv()
 
 app = FastAPI()
 
+# -----------------------------
+# CORS
+# -----------------------------
 app.add_middleware(
     CORSMiddleware,
     allow_origins=["*"],
@@ -22,45 +25,71 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# -----------------------------
+# Embedding Model
+# -----------------------------
 embedding_model = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-MiniLM-L6-v2"
 )
 
+# -----------------------------
+# Vector Database
+# -----------------------------
 db = Chroma(
     persist_directory="chroma_db",
     embedding_function=embedding_model
 )
 
+# -----------------------------
+# Request Schema
+# -----------------------------
 class ChatRequest(BaseModel):
     question: str
 
+# -----------------------------
+# Health Check
+# -----------------------------
 @app.get("/")
 def home():
     return {
-        "message": "RAG Chatbot Running"
+        "message": "SWS AI RAG Chatbot Running"
     }
 
+# -----------------------------
+# Chat Endpoint
+# -----------------------------
 @app.post("/api/chat")
 def chat(req: ChatRequest):
 
-    results = db.similarity_search(req.question, k=4)
+    # Retrieve top-k chunks
+    results = db.similarity_search(
+        req.question,
+        k=3
+    )
 
+    # Build context
     context = "\n\n".join([
         doc.page_content for doc in results
     ])
 
+    # Extract source metadata
     sources = list(set([
         doc.metadata.get("source", "Unknown")
         for doc in results
     ]))
 
+    # Prompt
     prompt = f"""
 You are a company policy assistant chatbot.
 
 Answer ONLY using the provided context.
 
-If the answer is not in the context, say:
+If the answer is not available in the context,
+reply exactly with:
+
 "I don't have that information in the company documents."
+
+Keep answers concise and professional.
 
 Context:
 {context}
@@ -69,15 +98,17 @@ Question:
 {req.question}
 """
 
+    # Local LLM via Ollama
     response = ollama.chat(
-    model="llama3",
-    messages=[
-        {
-            "role": "user",
-            "content": prompt
-        }
-    ]
-)
+        model="phi3",
+        messages=[
+            {
+                "role": "user",
+                "content": prompt
+            }
+        ]
+    )
+
     answer = response["message"]["content"]
 
     return {
