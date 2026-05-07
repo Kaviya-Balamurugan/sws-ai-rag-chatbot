@@ -10,7 +10,6 @@ function App() {
 
   const chatEndRef = useRef(null);
 
-  // Auto scroll
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({
       behavior: "smooth"
@@ -66,7 +65,6 @@ function App() {
     setLoading(false);
   };
 
-  // Enter key support
   const handleKeyPress = (e) => {
     if (e.key === "Enter") {
       sendMessage();
