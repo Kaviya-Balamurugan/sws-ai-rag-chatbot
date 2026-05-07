@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import axios from "axios";
 import "./index.css";
 
@@ -7,6 +7,15 @@ function App() {
   const [question, setQuestion] = useState("");
   const [messages, setMessages] = useState([]);
   const [loading, setLoading] = useState(false);
+
+  const chatEndRef = useRef(null);
+
+  // Auto scroll
+  useEffect(() => {
+    chatEndRef.current?.scrollIntoView({
+      behavior: "smooth"
+    });
+  }, [messages, loading]);
 
   const sendMessage = async () => {
 
@@ -21,12 +30,16 @@ function App() {
 
     setLoading(true);
 
+    const currentQuestion = question;
+
+    setQuestion("");
+
     try {
 
       const response = await axios.post(
         "http://127.0.0.1:8000/api/chat",
         {
-          question
+          question: currentQuestion
         }
       );
 
@@ -39,11 +52,25 @@ function App() {
       setMessages(prev => [...prev, botMessage]);
 
     } catch (error) {
+
+      const errorMessage = {
+        role: "bot",
+        text: "Something went wrong."
+      };
+
+      setMessages(prev => [...prev, errorMessage]);
+
       console.log(error);
     }
 
-    setQuestion("");
     setLoading(false);
+  };
+
+  // Enter key support
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      sendMessage();
+    }
   };
 
   return (
@@ -57,14 +84,17 @@ function App() {
 
           <div
             key={index}
-            className={msg.role}
+            className={`message ${msg.role}`}
           >
 
-            <p>{msg.text}</p>
+            <div className="message-content">
+              {msg.text}
+            </div>
 
             {msg.sources && (
               <div className="sources">
                 Sources:
+                {" "}
                 {msg.sources.join(", ")}
               </div>
             )}
@@ -73,10 +103,14 @@ function App() {
         ))}
 
         {loading && (
-          <div className="bot">
-            Thinking...
+          <div className="message bot">
+            <div className="message-content">
+              Thinking...
+            </div>
           </div>
         )}
+
+        <div ref={chatEndRef}></div>
 
       </div>
 
@@ -85,11 +119,15 @@ function App() {
         <input
           value={question}
           onChange={(e) => setQuestion(e.target.value)}
+          onKeyDown={handleKeyPress}
           placeholder="Ask company questions..."
         />
 
-        <button onClick={sendMessage}>
-          Send
+        <button
+          onClick={sendMessage}
+          disabled={loading}
+        >
+          {loading ? "..." : "Send"}
         </button>
 
       </div>
