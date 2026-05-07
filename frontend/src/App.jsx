@@ -10,6 +10,7 @@ function App() {
 
   const chatEndRef = useRef(null);
 
+  // Auto-scroll
   useEffect(() => {
     chatEndRef.current?.scrollIntoView({
       behavior: "smooth"
@@ -20,18 +21,17 @@ function App() {
 
     if (!question.trim()) return;
 
+    const currentQuestion = question;
+
     const userMessage = {
       role: "user",
-      text: question
+      text: currentQuestion
     };
 
     setMessages(prev => [...prev, userMessage]);
 
-    setLoading(true);
-
-    const currentQuestion = question;
-
     setQuestion("");
+    setLoading(true);
 
     try {
 
@@ -54,7 +54,7 @@ function App() {
 
       const errorMessage = {
         role: "bot",
-        text: "Something went wrong."
+        text: "Something went wrong while processing your request."
       };
 
       setMessages(prev => [...prev, errorMessage]);
@@ -72,62 +72,150 @@ function App() {
   };
 
   return (
-    <div className="container">
+    <div className="app-bg">
 
-      <h1>SWS AI Assistant</h1>
+      <div className="glass-overlay"></div>
 
-      <div className="chat-box">
+      <div className="container">
 
-        {messages.map((msg, index) => (
+        <div className="header">
 
-          <div
-            key={index}
-            className={`message ${msg.role}`}
+          <div>
+            <h1>SWS AI Assistant</h1>
+
+            <p>
+              Enterprise RAG Chatbot powered by FastAPI,
+              ChromaDB and Ollama
+            </p>
+          </div>
+
+          <div className="status-badge">
+            ● AI Online
+          </div>
+
+        </div>
+
+        <div className="chat-box">
+
+          {messages.length === 0 && (
+
+            <div className="welcome-card">
+
+              <h2>Welcome 👋</h2>
+
+              <p>
+                Ask questions related to company policies,
+                onboarding, compensation, leave policy,
+                HR rules, IT security, benefits and more.
+              </p>
+
+              <div className="suggestions">
+
+                <div
+                  className="suggestion"
+                  onClick={() =>
+                    setQuestion("What is the leave policy?")
+                  }
+                >
+                  What is the leave policy?
+                </div>
+
+                <div
+                  className="suggestion"
+                  onClick={() =>
+                    setQuestion("What are the health benefits?")
+                  }
+                >
+                  What are the health benefits?
+                </div>
+
+                <div
+                  className="suggestion"
+                  onClick={() =>
+                    setQuestion("What is the resignation process?")
+                  }
+                >
+                  What is the resignation process?
+                </div>
+
+              </div>
+
+            </div>
+          )}
+
+          {messages.map((msg, index) => (
+
+            <div
+              key={index}
+              className={`message ${msg.role}`}
+            >
+
+              <div className="message-content">
+                {msg.text}
+              </div>
+
+              {msg.sources &&
+               msg.sources.length > 0 &&
+               !msg.text.includes(
+                 "I don't have that information"
+               ) && (
+
+                <div className="sources">
+
+                  <span>Sources:</span>
+
+                  {msg.sources.map((src, i) => (
+
+                    <div
+                      key={i}
+                      className="source-pill"
+                    >
+                      {src}
+                    </div>
+
+                  ))}
+
+                </div>
+              )}
+
+            </div>
+          ))}
+
+          {loading && (
+
+            <div className="message bot">
+
+              <div className="typing-indicator">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+
+            </div>
+          )}
+
+          <div ref={chatEndRef}></div>
+
+        </div>
+
+        <div className="input-area">
+
+          <input
+            type="text"
+            value={question}
+            onChange={(e) => setQuestion(e.target.value)}
+            onKeyDown={handleKeyPress}
+            placeholder="Ask company-related questions..."
+          />
+
+          <button
+            onClick={sendMessage}
+            disabled={loading}
           >
+            {loading ? "..." : "Send"}
+          </button>
 
-            <div className="message-content">
-              {msg.text}
-            </div>
-
-            {msg.sources &&
- !msg.text.includes("I don't have that information") && (
-  <div className="sources">
-    Sources:
-    {" "}
-    {msg.sources.join(", ")}
-  </div>
-)}
-
-          </div>
-        ))}
-
-        {loading && (
-          <div className="message bot">
-            <div className="message-content">
-              Thinking...
-            </div>
-          </div>
-        )}
-
-        <div ref={chatEndRef}></div>
-
-      </div>
-
-      <div className="input-area">
-
-        <input
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          onKeyDown={handleKeyPress}
-          placeholder="Ask company questions..."
-        />
-
-        <button
-          onClick={sendMessage}
-          disabled={loading}
-        >
-          {loading ? "..." : "Send"}
-        </button>
+        </div>
 
       </div>
 

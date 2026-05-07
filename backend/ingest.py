@@ -56,7 +56,6 @@ embedding_model = HuggingFaceEmbeddings(
     model_name="sentence-transformers/all-MiniLM-L6-v2"
 )
 
-
 print("Creating Chroma vector database...")
 
 db = Chroma.from_documents(
