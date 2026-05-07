@@ -111,7 +111,10 @@ Question:
 
     answer = response["message"]["content"]
 
+    if "I don't have that information" in answer:
+        sources = []
+        
     return {
-        "answer": answer,
-        "sources": sources
-    }
+    "answer": answer,
+    "sources": sources
+}

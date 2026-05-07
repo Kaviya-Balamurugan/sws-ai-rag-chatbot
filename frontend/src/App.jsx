@@ -91,13 +91,14 @@ function App() {
               {msg.text}
             </div>
 
-            {msg.sources && (
-              <div className="sources">
-                Sources:
-                {" "}
-                {msg.sources.join(", ")}
-              </div>
-            )}
+            {msg.sources &&
+ !msg.text.includes("I don't have that information") && (
+  <div className="sources">
+    Sources:
+    {" "}
+    {msg.sources.join(", ")}
+  </div>
+)}
 
           </div>
         ))}
